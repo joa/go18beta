@@ -11,7 +11,7 @@ type Attempt[T any] interface {
 	// Panics with FailureReason if the attempt failed.
 	Get() T
 
-	// FailureReason for a failed attempt.
+	// Err for a failed attempt.
 	// nil if the attempt was successful.
 	Err() error
 }

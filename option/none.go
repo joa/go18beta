@@ -1,9 +1,6 @@
 package option
 
-func None[T any]() Option[T] {
-	//TODO: check if we can get rid of this alloc
-	return &none[T]{}
-}
+func None[T any]() Option[T] { return noneInst.(*none[T]) }
 
 var _ = Option[any](&none[any]{})
 
@@ -20,3 +17,5 @@ func (n *none[T]) Empty() bool                        { return true }
 func (n *none[T]) NonEmpty() bool                     { return false }
 func (n *none[T]) Filter(pred func(T) bool) Option[T] { return n }
 func (n *none[T]) Then(f func(T))                     {}
+
+var noneInst = any(&none[any]{})

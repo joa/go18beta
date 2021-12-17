@@ -18,12 +18,3 @@ type Promise[T any] interface {
 
 	Success(res T) Promise[T]
 }
-
-func Create[T any]() Promise[T] {
-	var todo Promise[T]
-	return todo
-}
-
-func Success[T any](v T) future.Future[T] {
-	return attempt.Success(v)
-}
