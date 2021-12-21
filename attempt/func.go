@@ -8,8 +8,8 @@ func Map[T, U any](a Attempt[T], f func(T) U) Attempt[U] {
 
 func FlatMap[T, U any](a Attempt[T], f func(T) Attempt[U]) Attempt[U] {
 	if a.Failure() {
-		var hack = any(a)
-		return hack.(*failedAttempt[U])
+		// TODO: if T == U we can get rid of allocation
+		return Failure[U](a.Err())
 	}
 
 	return f(a.Get())
