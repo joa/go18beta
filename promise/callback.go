@@ -1,9 +1,9 @@
 package promise
 
 import (
-	"sync/atomic"
-
 	"github.com/joa/go18beta/attempt"
+	"sync/atomic"
+	"unsafe"
 )
 
 type callback[T any] struct {
@@ -23,7 +23,7 @@ func (cb *callback[T]) dispatch(value attempt.Attempt[T]) {
 	go cb.run()
 }
 
-var nilCallback = any(&callback[any]{})
+var nilCallback = &callback[any]{}
 
 func reverseCallbackListAndRemoveNil[T any](callbacks *callback[T]) *callback[T] {
 	var (
@@ -32,7 +32,7 @@ func reverseCallbackListAndRemoveNil[T any](callbacks *callback[T]) *callback[T]
 		next     *callback[T]
 	)
 
-	for current != nilCallback && current != nil {
+	for unsafe.Pointer(current) != unsafe.Pointer(nilCallback) && current != nil {
 		next = current.next
 		current.next = previous
 		previous = current
