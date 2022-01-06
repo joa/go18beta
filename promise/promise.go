@@ -18,3 +18,9 @@ type Promise[T any] interface {
 
 	Success(res T) Promise[T]
 }
+
+func Success[T any](value T) Promise[T] { return ValueOf(attempt.Success(value)) }
+
+func Failure[T any](err error) Promise[T] { return ValueOf(attempt.Failure[T](err)) }
+
+func ValueOf[T any](value attempt.Attempt[T]) Promise[T] { return kept(value) }

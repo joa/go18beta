@@ -58,6 +58,8 @@ func TestOnComplete(t *testing.T) {
 
 	values := make(chan int)
 
+	// note: these will execute out of order since we use the
+	//       go scheduler to execute callbacks
 	r.OnComplete(func(_ attempt.Attempt[string]) {
 		values <- 1
 	}).OnComplete(func(_ attempt.Attempt[string]) {
@@ -82,11 +84,10 @@ func TestOnComplete(t *testing.T) {
 
 	select {
 	case <-time.After(10 * time.Second):
-		t.Errorf("test timed out")
+		t.Error("test timed out")
 	case res := <-res:
 		if res != 6 {
 			t.Errorf("expected 6, got %d", res)
 		}
 	}
-
 }

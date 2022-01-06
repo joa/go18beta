@@ -13,11 +13,19 @@ var (
 	_ = Promise[any](&prom[any]{})
 )
 
-type prom[T any] struct {
+// vtable is a list of a promise's virtual functions.
+type vtable[T any] struct {
 	doneFunc        func() bool
 	valueFunc       func() option.Option[attempt.Attempt[T]]
 	onCompleteFunc  func(func(attempt.Attempt[T])) future.Future[T]
 	tryCompleteFunc func(a attempt.Attempt[T]) bool
+}
+
+// prom is an abstract promise.
+//
+// instances must provide a vtable for implementations of the abstract methods.
+type prom[T any] struct {
+	vtable[T]
 }
 
 // future
