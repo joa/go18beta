@@ -1,8 +1,7 @@
-package promise
+package future
 
 import (
 	"github.com/joa/go18beta/attempt"
-	"github.com/joa/go18beta/future"
 )
 
 type Promise[T any] interface {
@@ -10,9 +9,9 @@ type Promise[T any] interface {
 
 	Complete(a attempt.Attempt[T]) Promise[T]
 
-	CompleteWith(f future.Future[T]) Promise[T]
+	CompleteWith(f Future[T]) Promise[T]
 
-	Future() future.Future[T]
+	Future() Future[T]
 
 	Failure(err error) Promise[T]
 

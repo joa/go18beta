@@ -1,8 +1,7 @@
-package promise
+package future
 
 import (
 	"github.com/joa/go18beta/attempt"
-	"github.com/joa/go18beta/future"
 	"github.com/joa/go18beta/option"
 )
 
@@ -17,7 +16,7 @@ func kept[T any](a attempt.Attempt[T]) Promise[T] {
 
 	p.valueFunc = func() option.Option[attempt.Attempt[T]] { return res }
 
-	p.onCompleteFunc = func(f func(attempt.Attempt[T])) future.Future[T] {
+	p.onCompleteFunc = func(f func(attempt.Attempt[T])) Future[T] {
 		go f(a)
 		return p.Future()
 	}

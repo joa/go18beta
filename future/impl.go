@@ -1,15 +1,14 @@
-package promise
+package future
 
 import (
 	"time"
 
 	"github.com/joa/go18beta/attempt"
-	"github.com/joa/go18beta/future"
 	"github.com/joa/go18beta/option"
 )
 
 var (
-	_ = future.Future[any](&prom[any]{})
+	_ = Future[any](&prom[any]{})
 	_ = Promise[any](&prom[any]{})
 )
 
@@ -17,7 +16,7 @@ var (
 type vtable[T any] struct {
 	doneFunc        func() bool
 	valueFunc       func() option.Option[attempt.Attempt[T]]
-	onCompleteFunc  func(func(attempt.Attempt[T])) future.Future[T]
+	onCompleteFunc  func(func(attempt.Attempt[T])) Future[T]
 	tryCompleteFunc func(a attempt.Attempt[T]) bool
 }
 
@@ -30,7 +29,7 @@ type prom[T any] struct {
 
 // future
 
-func (p *prom[T]) FallbackTo(f future.Future[T]) future.Future[T] {
+func (p *prom[T]) FallbackTo(f Future[T]) Future[T] {
 	q := Create[T]()
 
 	p.OnComplete(func(a attempt.Attempt[T]) {
@@ -44,7 +43,7 @@ func (p *prom[T]) FallbackTo(f future.Future[T]) future.Future[T] {
 	return q.Future()
 }
 
-func (p *prom[T]) FailAfter(d time.Duration) future.Future[T] {
+func (p *prom[T]) FailAfter(d time.Duration) Future[T] {
 	q := Create[T]()
 
 	p.OnComplete(func(a attempt.Attempt[T]) {
@@ -58,7 +57,7 @@ func (p *prom[T]) FailAfter(d time.Duration) future.Future[T] {
 	return q.Future()
 }
 
-func (p *prom[T]) Then(f func(value T)) future.Future[T] {
+func (p *prom[T]) Then(f func(value T)) Future[T] {
 	return p.OnComplete(func(a attempt.Attempt[T]) {
 		if a.Success() {
 			f(a.Get())
@@ -66,7 +65,7 @@ func (p *prom[T]) Then(f func(value T)) future.Future[T] {
 	})
 }
 
-func (p *prom[T]) Catch(f func(err error)) future.Future[T] {
+func (p *prom[T]) Catch(f func(err error)) Future[T] {
 	return p.OnComplete(func(a attempt.Attempt[T]) {
 		if a.Failure() {
 			f(a.Err())
@@ -74,7 +73,7 @@ func (p *prom[T]) Catch(f func(err error)) future.Future[T] {
 	})
 }
 
-func (p *prom[T]) Recover(f func(err error) T) future.Future[T] {
+func (p *prom[T]) Recover(f func(err error) T) Future[T] {
 	q := Create[T]()
 
 	p.OnComplete(func(a attempt.Attempt[T]) {
@@ -88,7 +87,7 @@ func (p *prom[T]) Recover(f func(err error) T) future.Future[T] {
 	return q.Future()
 }
 
-func (p *prom[T]) FlatRecover(f func(err error) future.Future[T]) future.Future[T] {
+func (p *prom[T]) FlatRecover(f func(err error) Future[T]) Future[T] {
 	q := Create[T]()
 
 	p.OnComplete(func(a attempt.Attempt[T]) {
@@ -106,7 +105,7 @@ func (p *prom[T]) Done() bool { return p.doneFunc() }
 
 func (p *prom[T]) Value() option.Option[attempt.Attempt[T]] { return p.valueFunc() }
 
-func (p *prom[T]) OnComplete(f func(attempt.Attempt[T])) future.Future[T] {
+func (p *prom[T]) OnComplete(f func(attempt.Attempt[T])) Future[T] {
 	return p.onCompleteFunc(f)
 }
 
@@ -124,7 +123,7 @@ func (p *prom[T]) Complete(a attempt.Attempt[T]) Promise[T] {
 	}
 }
 
-func (p *prom[T]) CompleteWith(f future.Future[T]) Promise[T] {
+func (p *prom[T]) CompleteWith(f Future[T]) Promise[T] {
 	f.OnComplete(func(a attempt.Attempt[T]) {
 		p.TryComplete(a)
 	})
@@ -132,8 +131,8 @@ func (p *prom[T]) CompleteWith(f future.Future[T]) Promise[T] {
 	return p
 }
 
-func (p *prom[T]) Future() future.Future[T] {
-	return future.Future[T](p)
+func (p *prom[T]) Future() Future[T] {
+	return Future[T](p)
 }
 
 func (p *prom[T]) Failure(err error) Promise[T] {

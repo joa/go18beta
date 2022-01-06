@@ -1,11 +1,10 @@
-package promise
+package future
 
 import (
 	"sync/atomic"
 	"unsafe"
 
 	"github.com/joa/go18beta/attempt"
-	"github.com/joa/go18beta/future"
 	"github.com/joa/go18beta/option"
 )
 
@@ -64,7 +63,7 @@ func Create[T any]() Promise[T] {
 		return option.None[attempt.Attempt[T]]()
 	}
 
-	p.onCompleteFunc = func(f func(attempt.Attempt[T])) future.Future[T] {
+	p.onCompleteFunc = func(f func(attempt.Attempt[T])) Future[T] {
 		for {
 			switch oldState := atomic.LoadInt32(&state); oldState {
 			case promiseInit:

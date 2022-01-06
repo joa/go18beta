@@ -1,10 +1,20 @@
 package future
 
-import "github.com/joa/go18beta/pair"
+import (
+	"github.com/joa/go18beta/attempt"
+	"github.com/joa/go18beta/pair"
+)
 
 func Map[T, U any](f Future[T], m func(T) U) Future[U] {
-	var todo Future[U]
-	return todo
+	p := Create[U]()
+	f.OnComplete(func(value attempt.Attempt[T]) {
+		if value.Success() {
+			p.Complete(attempt.Success(m(value.Get())))
+		} else {
+			p.Complete(attempt.Failure[U](value.Err()))
+		}
+	})
+	return p.Future()
 }
 
 func FlatMap[T, U any](f Future[T], m func(value T) Future[U]) Future[U] {
