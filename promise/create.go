@@ -1,46 +1,66 @@
 package promise
 
 import (
-	"fmt"
+	"sync/atomic"
+	"unsafe"
+
 	"github.com/joa/go18beta/attempt"
 	"github.com/joa/go18beta/future"
 	"github.com/joa/go18beta/option"
-	"sync/atomic"
-	"unsafe"
 )
 
-func swapCallbacksForValue[T any](statePtr *unsafe.Pointer, donePtr *int32, newState attempt.Attempt[T]) *callback[T] {
-	for i := 0; i < 1000; i++ {
-		// TODO: this is not safe, needs a write-mark for the donePtr
-		alreadyDone := atomic.LoadInt32(&donePtr) == 1
-		oldState := atomic.LoadPointer(statePtr)
+const (
+	promiseInit    = 0 // promise is initialized
+	promiseDone    = 1 // promise is done
+	promiseWriting = 2 // promise is being written
+)
 
-		if alreadyDone {
-			return nil
+func swapCallbacksForValue[T any](statePtr *int32, resPtr *unsafe.Pointer, newState attempt.Attempt[T]) (*callback[T], bool) {
+	for {
+		state := atomic.LoadInt32(statePtr)
+
+		switch state {
+		case promiseInit:
+			// current state is init, and we should transition to the done
+			// state. since we're updating two atomics we enter a writing
+			// state first.
+			if !atomic.CompareAndSwapInt32(statePtr, state, promiseWriting) {
+				// we lost the race and can't transition into writing state, retry
+				continue
+			} // else we won the race and will continue below
+		case promiseDone:
+			return nil, false // already done
+		case promiseWriting:
+			continue // someone else is updating
 		}
 
-		if atomic.CompareAndSwapPointer(statePtr, oldState, unsafe.Pointer(&newState)) {
-			atomic.StoreInt32(&donePtr, 1)
-			return (*callback[T])(oldState) // note: this is illegal for nilCallback
-		}
+		// we were able to transition from init to writing
+		// and are therefore able to update the resPtr
+
+		oldState := atomic.LoadPointer(resPtr)
+		atomic.StorePointer(resPtr, unsafe.Pointer(&newState))
+
+		// complete the write operation
+		atomic.StoreInt32(statePtr, promiseDone)
+
+		return *(**callback[T])(oldState), true
 	}
-
-	panic("unreachable")
 }
 
 func Create[T any]() Promise[T] {
-	var done int32
-	var state unsafe.Pointer
+	var state int32
+	var result unsafe.Pointer
 
-	atomic.StoreInt32(&done, 0)
-	atomic.StorePointer(&state, unsafe.Pointer(nilCallback))
+	atomic.StoreInt32(&state, promiseInit)
+	atomic.StorePointer(&result, unsafe.Pointer(nilCallback))
 
 	p := new(prom[T])
 
-	p.doneFunc = func() bool { return *((*attempt.Attempt[T])(atomic.LoadPointer(&state))) != nil }
+	p.doneFunc = func() bool { return atomic.LoadInt32(&state) == promiseDone }
 
 	p.valueFunc = func() option.Option[attempt.Attempt[T]] {
-		if res := *((*attempt.Attempt[T])(atomic.LoadPointer(&state))); res != nil {
+		if atomic.LoadInt32(&state) == promiseDone {
+			res := *((*attempt.Attempt[T])(atomic.LoadPointer(&result)))
 			return option.Some(res)
 		}
 
@@ -48,42 +68,43 @@ func Create[T any]() Promise[T] {
 	}
 
 	p.onCompleteFunc = func(f func(attempt.Attempt[T])) future.Future[T] {
-		for i := 0; i < 1000; i++ {
-			oldState := atomic.LoadPointer(&state)
-
-			if res := *((*attempt.Attempt[T])(oldState)); res != nil {
-				fmt.Println(res)
-				fmt.Printf("nope %p\n", f)
+		for {
+			switch oldState := atomic.LoadInt32(&state); oldState {
+			case promiseInit:
+				// current state is init, and we should transition to the writing
+				// state. this protects us from other writers while updating the
+				// list of callbacks
+				if !atomic.CompareAndSwapInt32(&state, oldState, promiseWriting) {
+					// we lost the race and can't transition into writing state, retry
+					continue
+				} // else we won the race and will continue below
+			case promiseDone:
+				res := *((*attempt.Attempt[T])(atomic.LoadPointer(&result)))
 				f(res)
 				return p.Future()
+			case promiseWriting:
+				continue // someone else is updating
 			}
 
-			fmt.Printf("add %p\n", f)
+			next := *(**callback[T])(atomic.LoadPointer(&result))
+			newState := &callback[T]{f: f, next: next, value: new(atomic.Value)}
 
-			next := (*callback[T])(oldState)
-			newState := &callback[T]{f: f, next: next}
+			atomic.StorePointer(&result, unsafe.Pointer(&newState))
+			atomic.StoreInt32(&state, promiseInit)
 
-			if atomic.CompareAndSwapPointer(&state, oldState, unsafe.Pointer(&newState)) {
-				return p.Future()
-			}
+			return p.Future()
 		}
-
-		panic("unreachable")
 	}
 
 	p.tryCompleteFunc = func(a attempt.Attempt[T]) bool {
-		callbacks := swapCallbacksForValue(&state, a)
-
-		switch {
-		case callbacks == nil:
-			// already completed
-			return false
-		case unsafe.Pointer(callbacks) == unsafe.Pointer(nilCallback):
-			// successfully completed without listeners
-			return true
+		switch cbs, changed := swapCallbacksForValue(&state, &result, a); {
+		case !changed:
+			return false // already completed
+		case cbs == nil:
+			return true // successfully completed without listeners
 		default:
 			// successfully completed with listeners
-			cb := reverseCallbackListAndRemoveNil[T](callbacks)
+			cb := reverseCallbackListAndRemoveNil[T](cbs)
 			for cb != nil {
 				next := cb.next
 				cb.dispatch(a)

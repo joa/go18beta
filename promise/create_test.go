@@ -2,6 +2,7 @@ package promise
 
 import (
 	"testing"
+	"time"
 
 	"github.com/joa/go18beta/attempt"
 )
@@ -55,20 +56,37 @@ func TestOnComplete(t *testing.T) {
 	w := Create[string]()
 	r := w.Future()
 
-	order := make(chan int, 3)
+	values := make(chan int)
 
 	r.OnComplete(func(_ attempt.Attempt[string]) {
-		order <- 1
+		values <- 1
 	}).OnComplete(func(_ attempt.Attempt[string]) {
-		order <- 2
+		values <- 2
 	}).OnComplete(func(_ attempt.Attempt[string]) {
-		order <- 3
+		values <- 3
 	})
 
+	res := make(chan int)
+
+	go func() {
+		sum := 0
+		sum += <-values
+		sum += <-values
+		sum += <-values
+		res <- sum
+	}()
+
+	go func() {
+		w.Success("foo")
+	}()
+
 	select {
-	case x := <-order:
-		if x != 1 {
-			t.Errorf("expected 1, got %d", x)
+	case <-time.After(10 * time.Second):
+		t.Errorf("test timed out")
+	case res := <-res:
+		if res != 6 {
+			t.Errorf("expected 6, got %d", res)
 		}
 	}
+
 }
