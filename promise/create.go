@@ -15,35 +15,32 @@ const (
 	promiseWriting = 2 // promise is being written
 )
 
-func swapCallbacksForValue[T any](statePtr *int32, resPtr *unsafe.Pointer, newState attempt.Attempt[T]) (*callback[T], bool) {
+func swapCallbacksForValue[T any](statePtr *int32, resPtr *unsafe.Pointer, res attempt.Attempt[T]) (*callback[T], bool) {
 	for {
-		state := atomic.LoadInt32(statePtr)
-
-		switch state {
+		switch oldState := atomic.LoadInt32(statePtr); oldState {
 		case promiseInit:
 			// current state is init, and we should transition to the done
 			// state. since we're updating two atomics we enter a writing
 			// state first.
-			if !atomic.CompareAndSwapInt32(statePtr, state, promiseWriting) {
+			if !atomic.CompareAndSwapInt32(statePtr, oldState, promiseWriting) {
 				// we lost the race and can't transition into writing state, retry
 				continue
 			} // else we won the race and will continue below
 		case promiseDone:
 			return nil, false // already done
 		case promiseWriting:
-			continue // someone else is updating
+			continue // someone else is updating, retry
 		}
 
 		// we were able to transition from init to writing
 		// and are therefore able to update the resPtr
 
-		oldState := atomic.LoadPointer(resPtr)
-		atomic.StorePointer(resPtr, unsafe.Pointer(&newState))
+		callbacks := atomic.LoadPointer(resPtr)
 
-		// complete the write operation
+		atomic.StorePointer(resPtr, unsafe.Pointer(&res))
 		atomic.StoreInt32(statePtr, promiseDone)
 
-		return *(**callback[T])(oldState), true
+		return (*callback[T])(callbacks), true
 	}
 }
 
@@ -83,13 +80,16 @@ func Create[T any]() Promise[T] {
 				f(res)
 				return p.Future()
 			case promiseWriting:
-				continue // someone else is updating
+				continue // someone else is updating, retry
 			}
 
-			next := *(**callback[T])(atomic.LoadPointer(&result))
-			newState := &callback[T]{f: f, next: next, value: new(atomic.Value)}
+			newCallbacks := &callback[T]{
+				f:     f,
+				next:  (*callback[T])(atomic.LoadPointer(&result)),
+				value: new(atomic.Value),
+			}
 
-			atomic.StorePointer(&result, unsafe.Pointer(&newState))
+			atomic.StorePointer(&result, unsafe.Pointer(newCallbacks))
 			atomic.StoreInt32(&state, promiseInit)
 
 			return p.Future()
