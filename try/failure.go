@@ -26,3 +26,4 @@ func (te tryErr[T]) FlatRecover(f func(err error) Try[T]) (res Try[T]) {
 	res = f(te.Err())
 	return
 }
+func (te tryErr[T]) Fold(_ func(T), g func(error)) { g(te.Err()) }

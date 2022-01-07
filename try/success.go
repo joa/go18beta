@@ -15,3 +15,4 @@ func (ts trySucc[T]) Err() error                            { return nil }
 func (ts trySucc[T]) Recover(func(error) T) Try[T]          { return ts }
 func (ts trySucc[T]) FlatRecover(func(error) Try[T]) Try[T] { return ts }
 func (ts trySucc[T]) OrElse(Try[T]) Try[T]                  { return ts }
+func (ts trySucc[T]) Fold(f func(T), _ func(error))         { f(ts.Must()) }

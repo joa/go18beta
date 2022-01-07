@@ -35,6 +35,8 @@ type Try[T any] interface {
 	FlatRecover(f func(err error) Try[T]) Try[T]
 
 	OrElse(t Try[T]) Try[T]
+
+	Fold(f func(T), g func(error))
 }
 
 // Func - Call f and return a Try for the result.
