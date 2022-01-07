@@ -57,13 +57,19 @@ type Future[T any] interface {
 	Chan() <-chan try.Try[T]
 }
 
+// Resolve a known value.
+func Resolve[T any](value T) Future[T] { return PromiseOf(try.Success(value)).Future() }
+
+// Reject a known error.
+func Reject[T any](err error) Future[T] { return PromiseOf(try.Failure[T](err)).Future() }
+
 // Go - Call f in a go routine and complete the future with its value.
 func Go[T any](f func() (T, error)) Future[T] {
 	p := Create[T]()
 	go func() {
 		// c.f. https://go.dev/ref/spec#Go_statements
 		// > The function value and parameters are evaluated as usual in the calling goroutine
-		p.Complete(try.Func(f))
+		p.MustComplete(try.Func(f))
 	}()
 	return p.Future()
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func TestSuccess(t *testing.T) {
-	w := Resolve[string]("foo")
+	w := PromiseOf[string](try.Success("foo"))
 	r := w.Future()
 
 	if !r.Done() {
@@ -43,7 +43,7 @@ func TestSuccess(t *testing.T) {
 }
 func TestFailure(t *testing.T) {
 	err := errors.New("fail")
-	w := Reject[string](err)
+	w := PromiseOf[string](try.Failure[string](err))
 	r := w.Future()
 
 	if !r.Done() {

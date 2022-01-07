@@ -36,7 +36,7 @@ func (p *prom[T]) FallbackTo(f Future[T]) Future[T] {
 
 	p.OnComplete(func(a try.Try[T]) {
 		if a.Success() {
-			q.Complete(a)
+			q.MustComplete(a)
 		} else {
 			q.CompleteWith(f)
 		}
@@ -70,7 +70,7 @@ func (p *prom[T]) Catch(f func(err error)) Future[T] {
 
 func (p *prom[T]) Recover(f func(err error) T) Future[T] {
 	q := Create[T]()
-	p.OnComplete(func(a try.Try[T]) { q.Complete(a.Recover(f)) })
+	p.OnComplete(func(a try.Try[T]) { q.MustComplete(a.Recover(f)) })
 	return q.Future()
 }
 
@@ -79,18 +79,18 @@ func (p *prom[T]) FlatRecover(f func(err error) Future[T]) Future[T] {
 
 	p.OnComplete(func(a try.Try[T]) {
 		if a.Success() {
-			q.Complete(a)
+			q.MustComplete(a)
 		} else {
 			// TODO: see try.panicToFailure - can we get rid of this clone?
 			defer func() {
 				if r := recover(); r != nil {
 					switch r := r.(type) {
 					case error:
-						q.Complete(try.Failure[T](r))
+						q.MustComplete(try.Failure[T](r))
 					case string:
-						q.Complete(try.Failure[T](errors.New(r)))
+						q.MustComplete(try.Failure[T](errors.New(r)))
 					default:
-						q.Complete(try.Failure[T](fmt.Errorf("%v", r)))
+						q.MustComplete(try.Failure[T](fmt.Errorf("%v", r)))
 					}
 				}
 			}()
@@ -116,11 +116,11 @@ func (p *prom[T]) TryComplete(a try.Try[T]) bool {
 	return p.tryCompleteFunc(a)
 }
 
-func (p *prom[T]) Complete(a try.Try[T]) Promise[T] {
+func (p *prom[T]) MustComplete(a try.Try[T]) Promise[T] {
 	if p.TryComplete(a) {
 		return p
 	} else {
-		panic("promise already completed")
+		panic(ErrAlreadyCompleted)
 	}
 }
 
@@ -137,11 +137,11 @@ func (p *prom[T]) Future() Future[T] {
 }
 
 func (p *prom[T]) Reject(err error) Promise[T] {
-	return p.Complete(try.Failure[T](err))
+	return p.MustComplete(try.Failure[T](err))
 }
 
 func (p *prom[T]) Resolve(res T) Promise[T] {
-	return p.Complete(try.Success[T](res))
+	return p.MustComplete(try.Success[T](res))
 }
 
 func (p *prom[T]) Chan() <-chan try.Try[T] {

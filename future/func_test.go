@@ -11,10 +11,10 @@ import (
 func TestFlatMap(t *testing.T) {
 	s := Resolve("xxx")
 	f := Reject[string](errors.New("yyy"))
-	fun := func(t string) Future[int] { return Resolve[int](len(t + t)).Future() }
+	fun := func(t string) Future[int] { return Resolve[int](len(t + t)) }
 
-	a := FlatMap(s.Future(), fun)
-	b := FlatMap(f.Future(), fun)
+	a := FlatMap(s, fun)
+	b := FlatMap(f, fun)
 
 	done := make(chan bool, 1)
 
@@ -52,7 +52,7 @@ func TestFlatMap(t *testing.T) {
 }
 
 func TestFlatMapPanic(t *testing.T) {
-	fut := FlatMap(Resolve("xxx").Future(), func(t string) Future[int] { panic("err") })
+	fut := FlatMap(Resolve("xxx"), func(t string) Future[int] { panic("err") })
 	done := make(chan bool, 1)
 
 	fut.Then(func(d int) {
