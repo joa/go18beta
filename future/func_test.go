@@ -15,8 +15,8 @@ func TestJoin(t *testing.T) {
 	d := b.Future()
 
 	go func() {
-		b.Success("b")
-		a.Success("a")
+		b.Resolve("b")
+		a.Resolve("a")
 	}()
 
 	res := make(chan string)

@@ -15,7 +15,7 @@ func asyncFib(n int) future.Future[int] {
 
 	go func() {
 		if n == 0 {
-			res.Success(0)
+			res.Resolve(0)
 			return
 		}
 
@@ -28,7 +28,7 @@ func asyncFib(n int) future.Future[int] {
 			fib1 = fib2
 		}
 
-		res.Success(fib1)
+		res.Resolve(fib1)
 	}()
 
 	return res.Future()

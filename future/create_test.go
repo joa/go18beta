@@ -79,7 +79,7 @@ func TestOnComplete(t *testing.T) {
 	}()
 
 	go func() {
-		w.Success("foo")
+		w.Resolve("foo")
 	}()
 
 	select {

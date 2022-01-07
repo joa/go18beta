@@ -15,21 +15,21 @@ func TestFlatMap(t *testing.T) {
 
 	switch {
 	case a.Failure():
-		t.Error("a.Failure() must be false")
+		t.Error("a.Reject() must be false")
 	case a.Err() != nil:
 		t.Error("a.Err() must be nil")
 	case a.Success() != true:
-		t.Error("a.Success() must be true")
+		t.Error("a.Resolve() must be true")
 	case a.Must() != 6:
 		t.Errorf("a.Must() must return '6', got '%v'", a.Must())
 	}
 
 	switch {
 	case b.Failure() != true:
-		t.Error("b.Failure() must be true")
+		t.Error("b.Reject() must be true")
 	case b.Err() == nil:
 		t.Error("b.Err() must not be nil")
 	case b.Success():
-		t.Error("b.Success() must be false")
+		t.Error("b.Resolve() must be false")
 	}
 }

@@ -46,7 +46,7 @@ func Join[T, U any](x Future[T], y Future[U]) Future[pair.Pair[T, U]] {
 				if ya.Failure() {
 					p.Complete(try.Failure[pair.Pair[T, U]](ya.Err()))
 				} else {
-					p.Success(pair.Pair[T, U]{
+					p.Resolve(pair.Pair[T, U]{
 						X: xa.Must(),
 						Y: ya.Must(),
 					})
