@@ -3,7 +3,7 @@ Experimenting with Go 1.18beta generics.
 
 ### Future Example
 Create and return an asynchronous computation.
-```
+```go
 func asyncFib(n int) future.Future[int] {
     return future.Go[int](func() (fib1 int, err error) {
         if n == 0 {
