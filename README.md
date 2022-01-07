@@ -6,6 +6,11 @@ Create and return an asynchronous computation.
 ```go
 func asyncFib(n int) future.Future[int] {
     return future.Go[int](func() (fib1 int, err error) {
+        if n < 0 {
+            err = fmt.Errorf("expected a positive integer, got %d", n)
+            return
+        }
+
         if n == 0 {
             return
         }
@@ -49,6 +54,11 @@ func asyncFib(n int) future.Future[int] {
     res := future.Create[int]()
 
     go func() {
+        if n < 0 {
+            res.Reject(fmt.Errorf("expected a positive integer, got %d", n))
+            return
+        }
+		
         if n == 0 {
             res.Resolve(0) 
             return
@@ -64,7 +74,7 @@ func asyncFib(n int) future.Future[int] {
         }
 
         // Resolve the promise
-        res.Success(fib1)
+        res.Resolve(fib1)
     }()
 
     // Return the Promise's future.

@@ -12,6 +12,11 @@ import (
 
 func asyncFibV1(n int) future.Future[int] {
 	return future.Go[int](func() (fib1 int, err error) {
+		if n < 0 {
+			err = fmt.Errorf("expected a positive integer, got %d", n)
+			return
+		}
+
 		if n == 0 {
 			return
 		}
@@ -33,6 +38,11 @@ func asyncFibV2(n int) future.Future[int] {
 	res := future.Create[int]() // create write only side (promise)
 
 	go func() {
+		if n < 0 {
+			res.Reject(fmt.Errorf("expected a positive integer, got %d", n))
+			return
+		}
+
 		if n == 0 {
 			res.Resolve(0)
 			return
@@ -79,7 +89,7 @@ func main() {
 		exit <- true
 	}).Catch(func(err error) {
 		// deal with error
-		fmt.Println("yolo")
+		fmt.Println("error:", err)
 		exit <- true
 	})
 
