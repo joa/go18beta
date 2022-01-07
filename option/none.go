@@ -11,8 +11,8 @@ func (n *none[T]) Get() (T, bool) {
 	var zero T
 	return zero, false
 }
-func (n *none[T]) GetOrElse(alt T) T { return alt }
-func (n *none[T]) GetOrErr(err error) (T, error) {
+func (n *none[T]) Or(alt T) T { return alt }
+func (n *none[T]) OrErr(err error) (T, error) {
 	var zero T
 	return zero, err
 }

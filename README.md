@@ -43,6 +43,25 @@ future.Map(asyncFib(n), func(res int) string {
 })
 ```
 
+## Try Example
+`try.Try` is a success/failure type. Methods that chain on `Try` can recover from panics and
+convert automatically into a failure case.
+
+```go
+digits := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+
+// create a successful result of -1
+res := try.Success(-1)
+
+// map our result to its string representation
+str := try.Map(res1, func(index int) string {
+    return digits[index] // this will panic, but Try will recover
+})
+
+fmt.Println(str.Or("<unknown>")) // this will print '<unknown>'
+fmt.Println(str.Err()) // this will print 'runtime error: index out of range [-1]'
+```
+
 ### Promise/Future Example
 More advanced use case that deals with the read- and write-only side
 of the asynchronous computation. This is useful when completion of the promise is done by multiple

@@ -9,8 +9,9 @@ type failedTry[T any] struct{ err error }
 func (sa failedTry[T]) Success() bool { return false }
 func (sa failedTry[T]) Failure() bool { return true }
 func (sa failedTry[T]) Must() T       { panic(sa.Err()) }
-func (sa failedTry[T]) Get() (T, bool) {
+func (sa failedTry[T]) Or(alt T) T    { return alt }
+func (sa failedTry[T]) Get() (T, error) {
 	var zero T
-	return zero, false
+	return zero, sa.Err()
 }
 func (sa failedTry[T]) Err() error { return sa.err }

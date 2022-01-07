@@ -3,11 +3,11 @@ package option
 type Option[T any] interface {
 	Must() T
 
+	Or(alt T) T
+
 	Get() (T, bool)
 
-	GetOrElse(alt T) T
-
-	GetOrErr(err error) (T, error)
+	OrErr(err error) (T, error)
 
 	OrElse(alt Option[T]) Option[T]
 

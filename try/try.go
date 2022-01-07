@@ -8,13 +8,18 @@ type Try[T any] interface {
 	Failure() bool
 
 	// Must return the value of the try.
-	// Panics with FailureReason in case of failure.
+	//
+	// Panics with Err() in case of failure.
 	Must() T
 
-	// Get the value.
-	// Returns the value and true in case of success.
-	// Returns the zero value for T and false in case of failure.
-	Get() (T, bool)
+	// Or returns an alternative value in case of failure.
+	Or(alt T) T
+
+	// Get the value and error.
+	//
+	// The value will be the zero value of T in case of failure.
+	// The error will be nil in case of success.
+	Get() (T, error)
 
 	// Err for a failed try.
 	// nil in case of success.
