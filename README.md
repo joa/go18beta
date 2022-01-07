@@ -23,7 +23,7 @@ func asyncFib(n int) future.Future[int] {
     })
 }
 
-// Startthe async computation and do something with
+// Start the async computation and do something with
 // the value once ready.
 // All callbacks are executed in their own go routine.
 future.Map(asyncFib(n), func(res int) string {
