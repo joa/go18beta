@@ -76,16 +76,15 @@ func Create[T any]() Promise[T] {
 				} // else we won the race and will continue below
 			case promiseDone:
 				res := *((*try.Try[T])(atomic.LoadPointer(&result)))
-				f(res)
+				go f(res)
 				return p.Future()
 			case promiseWriting:
 				continue // someone else is updating, retry
 			}
 
 			newCallbacks := &callback[T]{
-				f:     f,
-				next:  (*callback[T])(atomic.LoadPointer(&result)),
-				value: new(atomic.Value),
+				f:    f,
+				next: (*callback[T])(atomic.LoadPointer(&result)),
 			}
 
 			atomic.StorePointer(&result, unsafe.Pointer(newCallbacks))

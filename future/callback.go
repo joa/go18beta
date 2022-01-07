@@ -1,7 +1,6 @@
 package future
 
 import (
-	"sync/atomic"
 	"unsafe"
 
 	"github.com/joa/go18beta/try"
@@ -11,24 +10,14 @@ import (
 //
 // Multiple callbacks can be stored as a single linked list via the next pointer.
 type callback[T any] struct {
-	f     func(a try.Try[T])
-	next  *callback[T]
-	value *atomic.Value
+	f    func(a try.Try[T])
+	next *callback[T]
 }
 
-// run executes the callback method with the current value and resets the state.
-//
-// This method bust be called only once.
-func (cb *callback[T]) run() {
-	cb.f(cb.value.Load().(try.Try[T]))
-	cb.value = nil
-	cb.next = nil
-}
-
-// dispatch memorizes the callback argument and executes the callback method asynchronous.
+// dispatch the callback.
 func (cb *callback[T]) dispatch(value try.Try[T]) {
-	cb.value.Store(value)
-	go cb.run()
+	cb.next = nil
+	go cb.f(value)
 }
 
 // nilCallback is the terminal of the linked list of callbacks

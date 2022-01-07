@@ -1,11 +1,76 @@
 package future
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/joa/go18beta/pair"
 )
+
+func TestFlatMap(t *testing.T) {
+	s := Resolve("xxx")
+	f := Reject[string](errors.New("yyy"))
+	fun := func(t string) Future[int] { return Resolve[int](len(t + t)).Future() }
+
+	a := FlatMap(s.Future(), fun)
+	b := FlatMap(f.Future(), fun)
+
+	done := make(chan bool, 1)
+
+	a.Then(func(d int) {
+		if d != 6 {
+			t.Errorf("expected 6, got %d", d)
+		}
+		done <- true
+	}).Catch(func(err error) {
+		done <- true
+		t.Fatal("must not fail")
+	})
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Error("test timed out")
+	}
+
+	b.Then(func(d int) {
+		done <- true
+		t.Fatal("must fail")
+	}).Catch(func(err error) {
+		if err.Error() != "yyy" {
+			t.Errorf("expected err, got %v", b.Value().Must())
+		}
+		done <- true
+	})
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Error("test timed out")
+	}
+}
+
+func TestFlatMapPanic(t *testing.T) {
+	fut := FlatMap(Resolve("xxx").Future(), func(t string) Future[int] { panic("err") })
+	done := make(chan bool, 1)
+
+	fut.Then(func(d int) {
+		done <- true
+		t.Fatal("must fail")
+	}).Catch(func(err error) {
+		if err.Error() != "err" {
+			t.Errorf("expected err, got %s", err)
+		}
+		done <- true
+	})
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Error("test timed out")
+	}
+}
 
 func TestJoin(t *testing.T) {
 	a := Create[string]()

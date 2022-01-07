@@ -47,6 +47,8 @@ future.Map(asyncFib(n), func(res int) string {
 `try.Try` is a success/failure type. Methods that chain on `Try` can recover from panics and
 convert automatically into a failure case.
 
+Futures use `Try` internally as well so all methods are automatically protected.
+
 ```go
 digits := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
 

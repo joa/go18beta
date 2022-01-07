@@ -7,23 +7,19 @@ import (
 
 func Map[T, U any](f Future[T], m func(T) U) Future[U] {
 	p := Create[U]()
-	f.OnComplete(func(value try.Try[T]) {
-		if value.Success() {
-			p.Complete(try.Success(m(value.Must())))
-		} else {
-			p.Complete(try.Failure[U](value.Err()))
-		}
-	})
+	f.OnComplete(func(value try.Try[T]) { p.Complete(try.Map(value, m)) })
 	return p.Future()
 }
 
 func FlatMap[T, U any](f Future[T], m func(value T) Future[U]) Future[U] {
 	p := Create[U]()
 	f.OnComplete(func(value try.Try[T]) {
-		if value.Success() {
-			p.CompleteWith(m(value.Must()))
+		mapped := try.Map[T, Future[U]](value, m)
+
+		if mapped.Success() {
+			p.CompleteWith(mapped.Must())
 		} else {
-			p.Complete(try.Failure[U](value.Err()))
+			p.Complete(try.Failure[U](mapped.Err()))
 		}
 	})
 	return p.Future()

@@ -1,14 +1,17 @@
 package try
 
-func Success[T any](value T) Try[T] { return &successfulTry[T]{value: value} }
+func Success[T any](value T) Try[T] { return &trySucc[T]{value: value} }
 
-var _ = Try[any](&successfulTry[any]{})
+var _ = Try[any](&trySucc[any]{})
 
-type successfulTry[T any] struct{ value T }
+type trySucc[T any] struct{ value T }
 
-func (sa successfulTry[T]) Success() bool   { return true }
-func (sa successfulTry[T]) Failure() bool   { return false }
-func (sa successfulTry[T]) Must() T         { return sa.value }
-func (sa successfulTry[T]) Or(alt T) T      { return sa.Must() }
-func (sa successfulTry[T]) Get() (T, error) { return sa.Must(), sa.Err() }
-func (sa successfulTry[T]) Err() error      { return nil }
+func (ts trySucc[T]) Success() bool                             { return true }
+func (ts trySucc[T]) Failure() bool                             { return false }
+func (ts trySucc[T]) Must() T                                   { return ts.value }
+func (ts trySucc[T]) Or(T) T                                    { return ts.Must() }
+func (ts trySucc[T]) Get() (T, error)                           { return ts.Must(), ts.Err() }
+func (ts trySucc[T]) Err() error                                { return nil }
+func (ts trySucc[T]) Recover(func(err error) T) Try[T]          { return ts }
+func (ts trySucc[T]) FlatRecover(func(err error) Try[T]) Try[T] { return ts }
+func (ts trySucc[T]) OrElse(Try[T]) Try[T]                      { return ts }

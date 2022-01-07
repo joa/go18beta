@@ -1,6 +1,8 @@
 package future
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/joa/go18beta/option"
@@ -45,15 +47,8 @@ func (p *prom[T]) FallbackTo(f Future[T]) Future[T] {
 
 func (p *prom[T]) FailAfter(d time.Duration) Future[T] {
 	q := Create[T]()
-
-	p.OnComplete(func(a try.Try[T]) {
-		q.TryComplete(a)
-	})
-
-	time.AfterFunc(d, func() {
-		q.TryComplete(try.Failure[T](ErrTimeout))
-	})
-
+	t := time.AfterFunc(d, func() { q.TryComplete(try.Failure[T](ErrTimeout)) })
+	p.OnComplete(func(a try.Try[T]) { t.Stop(); q.TryComplete(a) })
 	return q.Future()
 }
 
@@ -75,15 +70,7 @@ func (p *prom[T]) Catch(f func(err error)) Future[T] {
 
 func (p *prom[T]) Recover(f func(err error) T) Future[T] {
 	q := Create[T]()
-
-	p.OnComplete(func(a try.Try[T]) {
-		if a.Success() {
-			q.Complete(a)
-		} else {
-			q.Complete(try.Success(f(a.Err())))
-		}
-	})
-
+	p.OnComplete(func(a try.Try[T]) { q.Complete(a.Recover(f)) })
 	return q.Future()
 }
 
@@ -94,6 +81,20 @@ func (p *prom[T]) FlatRecover(f func(err error) Future[T]) Future[T] {
 		if a.Success() {
 			q.Complete(a)
 		} else {
+			// TODO: see try.panicToFailure - can we get rid of this clone?
+			defer func() {
+				if r := recover(); r != nil {
+					switch r := r.(type) {
+					case error:
+						q.Complete(try.Failure[T](r))
+					case string:
+						q.Complete(try.Failure[T](errors.New(r)))
+					default:
+						q.Complete(try.Failure[T](fmt.Errorf("%v", r)))
+					}
+				}
+			}()
+
 			q.CompleteWith(f(a.Err()))
 		}
 	})
