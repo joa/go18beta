@@ -1,4 +1,4 @@
-package attempt
+package try
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 func TestFlatMap(t *testing.T) {
 	s := Success("xxx")
 	f := Failure[string](errors.New("yyy"))
-	fun := func(t string) Attempt[int] { return Success(len(t + t)) }
+	fun := func(t string) Try[int] { return Success(len(t + t)) }
 
 	a := FlatMap(s, fun)
 	b := FlatMap(f, fun)
@@ -20,8 +20,8 @@ func TestFlatMap(t *testing.T) {
 		t.Error("a.Err() must be nil")
 	case a.Success() != true:
 		t.Error("a.Success() must be true")
-	case a.Get() != 6:
-		t.Errorf("a.Get() must return '6', got '%v'", a.Get())
+	case a.Must() != 6:
+		t.Errorf("a.Must() must return '6', got '%v'", a.Must())
 	}
 
 	switch {

@@ -6,7 +6,11 @@ var _ = Option[any](&none[any]{})
 
 type none[T any] struct{}
 
-func (n *none[T]) Get() T            { panic(ErrEmpty) }
+func (n *none[T]) Must() T { panic(ErrEmpty) }
+func (n *none[T]) Get() (T, bool) {
+	var zero T
+	return zero, false
+}
 func (n *none[T]) GetOrElse(alt T) T { return alt }
 func (n *none[T]) GetOrErr(err error) (T, error) {
 	var zero T

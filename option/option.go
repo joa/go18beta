@@ -1,7 +1,9 @@
 package option
 
 type Option[T any] interface {
-	Get() T
+	Must() T
+
+	Get() (T, bool)
 
 	GetOrElse(alt T) T
 

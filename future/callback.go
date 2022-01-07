@@ -4,22 +4,22 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/joa/go18beta/attempt"
+	"github.com/joa/go18beta/try"
 )
 
 type callback[T any] struct {
-	f     func(a attempt.Attempt[T])
+	f     func(a try.Try[T])
 	next  *callback[T]
 	value *atomic.Value
 }
 
 func (cb *callback[T]) run() {
-	cb.f(cb.value.Load().(attempt.Attempt[T]))
+	cb.f(cb.value.Load().(try.Try[T]))
 	cb.value = nil
 	cb.next = nil
 }
 
-func (cb *callback[T]) dispatch(value attempt.Attempt[T]) {
+func (cb *callback[T]) dispatch(value try.Try[T]) {
 	cb.value.Store(value)
 	go cb.run()
 }

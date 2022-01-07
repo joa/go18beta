@@ -1,18 +1,15 @@
-# ｇｏ ｇｅｎｅｒｉｃｓ ｓｕｐｅｒ ｄｕｐｅｒ ｔｅｓｔ ｒｅｐｏ
+# Go 1.18beta test repo
+Experimenting with Go 1.18beta generics.
 
-![yey generics](https://media.giphy.com/media/3oEduTny9qJEtpGElG/giphy.gif)
-
-much generics such wow 
-
-### 乇ﾒﾑﾶｱﾚ乇
+### Promise/Future Example
 ```go
 
 func asyncFib(n int) future.Future[int] {
-	res := future.Create[int]()
+	res := future.Create[int]() // create a promise, write-only side of async computation
 
 	go func() {
 		if n == 0 {
-			res.Success(0)
+			res.Success(0) // resolve the promise
 			return
 		}
 
@@ -25,10 +22,10 @@ func asyncFib(n int) future.Future[int] {
 			fib1 = fib2
 		}
 
-		res.Success(fib1)
+		res.Success(fib1) // resolve the promise
 	}()
 
-	return res.Future()
+	return res.Future() // return the read-only side of the async computation
 }
 
 future.Map(asyncFib(n), func(res int) string {

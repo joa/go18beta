@@ -1,13 +1,11 @@
 package future
 
-import (
-	"github.com/joa/go18beta/attempt"
-)
+import "github.com/joa/go18beta/try"
 
 type Promise[T any] interface {
-	TryComplete(a attempt.Attempt[T]) bool
+	TryComplete(a try.Try[T]) bool
 
-	Complete(a attempt.Attempt[T]) Promise[T]
+	Complete(a try.Try[T]) Promise[T]
 
 	CompleteWith(f Future[T]) Promise[T]
 
@@ -18,8 +16,8 @@ type Promise[T any] interface {
 	Success(res T) Promise[T]
 }
 
-func Success[T any](value T) Promise[T] { return ValueOf(attempt.Success(value)) }
+func Success[T any](value T) Promise[T] { return ValueOf(try.Success(value)) }
 
-func Failure[T any](err error) Promise[T] { return ValueOf(attempt.Failure[T](err)) }
+func Failure[T any](err error) Promise[T] { return ValueOf(try.Failure[T](err)) }
 
-func ValueOf[T any](value attempt.Attempt[T]) Promise[T] { return kept(value) }
+func ValueOf[T any](value try.Try[T]) Promise[T] { return kept(value) }

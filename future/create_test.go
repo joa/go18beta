@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joa/go18beta/attempt"
+	"github.com/joa/go18beta/try"
 )
 
 func TestCreate(t *testing.T) {
@@ -19,7 +19,7 @@ func TestCreate(t *testing.T) {
 		t.Error("promise result must be empty")
 	}
 
-	if !w.TryComplete(attempt.Success("foo")) {
+	if !w.TryComplete(try.Success("foo")) {
 		t.Error("try-complete must succeed")
 	}
 
@@ -31,11 +31,11 @@ func TestCreate(t *testing.T) {
 		t.Error("promise result must not be empty")
 	}
 
-	if v := r.Value().Get().Get(); v != "foo" {
+	if v := r.Value().Must().Must(); v != "foo" {
 		t.Errorf("expected 'foo', got '%s'", v)
 	}
 
-	if w.TryComplete(attempt.Success("bar")) {
+	if w.TryComplete(try.Success("bar")) {
 		t.Error("try-complete must not succeed the second time")
 	}
 
@@ -47,7 +47,7 @@ func TestCreate(t *testing.T) {
 		t.Error("promise result must still not be empty")
 	}
 
-	if v := r.Value().Get().Get(); v != "foo" {
+	if v := r.Value().Must().Must(); v != "foo" {
 		t.Errorf("expected 'foo', got '%s'", v)
 	}
 }
@@ -60,11 +60,11 @@ func TestOnComplete(t *testing.T) {
 
 	// note: these will execute out of order since we use the
 	//       go scheduler to execute callbacks
-	r.OnComplete(func(_ attempt.Attempt[string]) {
+	r.OnComplete(func(_ try.Try[string]) {
 		values <- 1
-	}).OnComplete(func(_ attempt.Attempt[string]) {
+	}).OnComplete(func(_ try.Try[string]) {
 		values <- 2
-	}).OnComplete(func(_ attempt.Attempt[string]) {
+	}).OnComplete(func(_ try.Try[string]) {
 		values <- 3
 	})
 

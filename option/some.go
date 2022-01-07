@@ -8,16 +8,17 @@ type some[T any] struct {
 	value T
 }
 
-func (s *some[T]) Get() T                         { return s.value }
-func (s *some[T]) GetOrElse(alt T) T              { return s.Get() }
-func (s *some[T]) GetOrErr(err error) (T, error)  { return s.Get(), nil }
+func (s *some[T]) Must() T                        { return s.value }
+func (s *some[T]) Get() (T, bool)                 { return s.value, true }
+func (s *some[T]) GetOrElse(alt T) T              { return s.Must() }
+func (s *some[T]) GetOrErr(err error) (T, error)  { return s.Must(), nil }
 func (s *some[T]) OrElse(alt Option[T]) Option[T] { return s }
 func (s *some[T]) Empty() bool                    { return false }
 func (s *some[T]) NonEmpty() bool                 { return true }
-func (s *some[T]) Then(f func(T))                 { f(s.Get()) }
+func (s *some[T]) Then(f func(T))                 { f(s.Must()) }
 
 func (s *some[T]) Filter(pred func(T) bool) Option[T] {
-	if pred(s.Get()) {
+	if pred(s.Must()) {
 		return s
 	}
 

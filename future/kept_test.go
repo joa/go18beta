@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joa/go18beta/attempt"
+	"github.com/joa/go18beta/try"
 )
 
 func TestSuccess(t *testing.T) {
@@ -20,7 +20,7 @@ func TestSuccess(t *testing.T) {
 		t.Error("promise result must not be empty")
 	}
 
-	if w.TryComplete(attempt.Success("bar")) {
+	if w.TryComplete(try.Success("bar")) {
 		t.Error("try-complete must not succeed")
 	}
 
@@ -54,7 +54,7 @@ func TestFailure(t *testing.T) {
 		t.Error("promise result must not be empty")
 	}
 
-	if w.TryComplete(attempt.Success("bar")) {
+	if w.TryComplete(try.Success("bar")) {
 		t.Error("try-complete must not succeed")
 	}
 

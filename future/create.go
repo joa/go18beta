@@ -4,8 +4,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/joa/go18beta/attempt"
 	"github.com/joa/go18beta/option"
+	"github.com/joa/go18beta/try"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	promiseWriting = 2 // promise is being written
 )
 
-func swapCallbacksForValue[T any](statePtr *int32, resPtr *unsafe.Pointer, res attempt.Attempt[T]) (*callback[T], bool) {
+func swapCallbacksForValue[T any](statePtr *int32, resPtr *unsafe.Pointer, res try.Try[T]) (*callback[T], bool) {
 	for {
 		switch oldState := atomic.LoadInt32(statePtr); oldState {
 		case promiseInit:
@@ -54,16 +54,16 @@ func Create[T any]() Promise[T] {
 
 	p.doneFunc = func() bool { return atomic.LoadInt32(&state) == promiseDone }
 
-	p.valueFunc = func() option.Option[attempt.Attempt[T]] {
+	p.valueFunc = func() option.Option[try.Try[T]] {
 		if atomic.LoadInt32(&state) == promiseDone {
-			res := *((*attempt.Attempt[T])(atomic.LoadPointer(&result)))
+			res := *((*try.Try[T])(atomic.LoadPointer(&result)))
 			return option.Some(res)
 		}
 
-		return option.None[attempt.Attempt[T]]()
+		return option.None[try.Try[T]]()
 	}
 
-	p.onCompleteFunc = func(f func(attempt.Attempt[T])) Future[T] {
+	p.onCompleteFunc = func(f func(try.Try[T])) Future[T] {
 		for {
 			switch oldState := atomic.LoadInt32(&state); oldState {
 			case promiseInit:
@@ -75,7 +75,7 @@ func Create[T any]() Promise[T] {
 					continue
 				} // else we won the race and will continue below
 			case promiseDone:
-				res := *((*attempt.Attempt[T])(atomic.LoadPointer(&result)))
+				res := *((*try.Try[T])(atomic.LoadPointer(&result)))
 				f(res)
 				return p.Future()
 			case promiseWriting:
@@ -95,7 +95,7 @@ func Create[T any]() Promise[T] {
 		}
 	}
 
-	p.tryCompleteFunc = func(a attempt.Attempt[T]) bool {
+	p.tryCompleteFunc = func(a try.Try[T]) bool {
 		switch cbs, changed := swapCallbacksForValue(&state, &result, a); {
 		case !changed:
 			return false // already completed

@@ -11,5 +11,5 @@ func FlatMap[T, U any](a Option[T], f func(T) Option[U]) Option[U] {
 		return None[U]()
 	}
 
-	return f(a.Get())
+	return f(a.Must())
 }
