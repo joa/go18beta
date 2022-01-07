@@ -16,8 +16,8 @@ func (n *none[T]) OrErr(err error) (T, error) {
 	var zero T
 	return zero, err
 }
-func (n *none[T]) OrElse(alt Option[T]) Option[T]     { return alt }
-func (n *none[T]) Empty() bool                        { return true }
-func (n *none[T]) NonEmpty() bool                     { return false }
-func (n *none[T]) Filter(pred func(T) bool) Option[T] { return n }
-func (n *none[T]) Then(f func(T))                     {}
+func (n *none[T]) OrElse(alt Option[T]) Option[T] { return alt }
+func (n *none[T]) Empty() bool                    { return true }
+func (n *none[T]) NonEmpty() bool                 { return false }
+func (n *none[T]) Filter(func(T) bool) Option[T]  { return n }
+func (n *none[T]) Then(func(T))                   {}

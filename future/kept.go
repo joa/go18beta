@@ -21,7 +21,7 @@ func kept[T any](a try.Try[T]) Promise[T] {
 		return p.Future()
 	}
 
-	p.tryCompleteFunc = func(_ try.Try[T]) bool { return false }
+	p.tryCompleteFunc = func(try.Try[T]) bool { return false }
 
 	return p
 }
