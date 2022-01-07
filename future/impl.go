@@ -143,3 +143,12 @@ func (p *prom[T]) Reject(err error) Promise[T] {
 func (p *prom[T]) Resolve(res T) Promise[T] {
 	return p.Complete(try.Success[T](res))
 }
+
+func (p *prom[T]) Chan() <-chan try.Try[T] {
+	ch := make(chan try.Try[T])
+	p.OnComplete(func(res try.Try[T]) {
+		ch <- res
+		close(ch)
+	})
+	return ch
+}

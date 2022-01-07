@@ -91,3 +91,21 @@ func TestOnComplete(t *testing.T) {
 		}
 	}
 }
+
+func TestChan(t *testing.T) {
+	w := Create[string]()
+	r := w.Future()
+
+	go func() {
+		w.Resolve("foo")
+	}()
+
+	select {
+	case <-time.After(10 * time.Second):
+		t.Error("test timed out")
+	case res := <-r.Chan():
+		if res.Must() != "foo" {
+			t.Errorf("expected 'foo', got %s", res)
+		}
+	}
+}
