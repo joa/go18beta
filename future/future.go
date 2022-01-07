@@ -26,3 +26,17 @@ type Future[T any] interface {
 
 	OnComplete(f func(try.Try[T])) Future[T]
 }
+
+func Go[T any](f func() (T, error)) Future[T] {
+	p := Create[T]()
+
+	go func() {
+		if res, err := f(); err == nil {
+			p.Resolve(res)
+		} else {
+			p.Reject(err)
+		}
+	}()
+
+	return p.Future()
+}

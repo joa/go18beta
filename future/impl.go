@@ -135,10 +135,10 @@ func (p *prom[T]) Future() Future[T] {
 	return Future[T](p)
 }
 
-func (p *prom[T]) Failure(err error) Promise[T] {
+func (p *prom[T]) Reject(err error) Promise[T] {
 	return p.Complete(try.Failure[T](err))
 }
 
-func (p *prom[T]) Success(res T) Promise[T] {
+func (p *prom[T]) Resolve(res T) Promise[T] {
 	return p.Complete(try.Success[T](res))
 }

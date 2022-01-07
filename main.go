@@ -10,8 +10,27 @@ import (
 	"github.com/joa/go18beta/future"
 )
 
-func asyncFib(n int) future.Future[int] {
-	res := future.Create[int]()
+func asyncFibV1(n int) future.Future[int] {
+	return future.Go[int](func() (fib1 int, err error) {
+		if n == 0 {
+			return
+		}
+
+		fib0 := 0
+		fib1 = 1
+
+		for i := 2; i <= n; i++ {
+			fib2 := fib0 + fib1
+			fib0 = fib1
+			fib1 = fib2
+		}
+
+		return
+	})
+}
+
+func asyncFibV2(n int) future.Future[int] {
+	res := future.Create[int]() // create write only side (promise)
 
 	go func() {
 		if n == 0 {
@@ -31,7 +50,7 @@ func asyncFib(n int) future.Future[int] {
 		res.Resolve(fib1)
 	}()
 
-	return res.Future()
+	return res.Future() // return readonly side (future)
 }
 
 func main() {
@@ -51,7 +70,7 @@ func main() {
 
 	exit := make(chan bool)
 
-	future.Map(asyncFib(n), func(fib int) string {
+	future.Map(asyncFibV1(n), func(fib int) string {
 		// conversion to string
 		return strconv.Itoa(fib)
 	}).Then(func(fib string) {
