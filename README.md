@@ -64,6 +64,37 @@ fmt.Println(str.Or("<unknown>")) // this will print '<unknown>'
 fmt.Println(str.Err()) // this will print 'runtime error: index out of range [-1]'
 ```
 
+## More Fun with Future
+We can use `future.Race` to select the first computation that completes.
+
+```go
+var suf = []string{"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"}
+
+var regex = regexp.MustCompile(`Fib\(\d+\) = (\d+?)\.`)
+
+func googFib(n int) future.Future[int] {
+    return future.MapErr(
+        future.Go[[]byte](func() (body []byte, err error) {
+            resp, err := http.Get(fmt.Sprintf("https://www.google.com/search?q=%d%s+fibonacci+number", n, suf[n%10]))
+
+            if err != nil {
+                return
+            }
+
+            return ioutil.ReadAll(resp.Body)
+        }),
+        func(body []byte) (int, error) {
+            match := regex.FindSubmatch(body)
+            return strconv.Atoi(string(match[1]))
+        })
+}
+
+future.Race(asyncFib(n), googFib(n)).Then(func(res string) {
+    // we don't make guarantees about the correctness of this answer :)
+    // but it was either computed by you or the interwebs. 
+    fmt.Println(res)
+}
+```
 ### Promise/Future Example
 More advanced use case that deals with the read- and write-only side
 of the asynchronous computation. This is useful when completion of the promise is done by multiple

@@ -1,6 +1,7 @@
 package future
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -110,6 +111,25 @@ func (p *prom[T]) OnComplete(f func(try.Try[T])) Future[T] {
 	return p.onCompleteFunc(f)
 }
 
+func (p *prom[T]) Chan() <-chan try.Try[T] {
+	ch := make(chan try.Try[T])
+	p.OnComplete(func(res try.Try[T]) {
+		ch <- res
+		close(ch)
+	})
+	return ch
+}
+
+func (p *prom[T]) Await(ctx context.Context) (res T, err error) {
+	select {
+	case <-ctx.Done():
+		err = ctx.Err()
+	case value := <-p.Chan():
+		res, err = value.Get()
+	}
+	return
+}
+
 // promise
 
 func (p *prom[T]) TryComplete(a try.Try[T]) bool {
@@ -142,13 +162,4 @@ func (p *prom[T]) Reject(err error) Promise[T] {
 
 func (p *prom[T]) Resolve(res T) Promise[T] {
 	return p.MustComplete(try.Success[T](res))
-}
-
-func (p *prom[T]) Chan() <-chan try.Try[T] {
-	ch := make(chan try.Try[T])
-	p.OnComplete(func(res try.Try[T]) {
-		ch <- res
-		close(ch)
-	})
-	return ch
 }

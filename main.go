@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"syscall"
 
@@ -32,6 +35,27 @@ func asyncFibV1(n int) future.Future[int] {
 
 		return
 	})
+}
+
+var suf = []string{"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"}
+
+var regex = regexp.MustCompile(`Fib\(\d+\) = (\d+?)\.`)
+
+func googFib(n int) future.Future[int] {
+	return future.MapErr(
+		future.Go[[]byte](func() (body []byte, err error) {
+			resp, err := http.Get(fmt.Sprintf("https://www.google.com/search?q=%d%s+fibonacci+number", n, suf[n%10]))
+
+			if err != nil {
+				return
+			}
+
+			return ioutil.ReadAll(resp.Body)
+		}),
+		func(body []byte) (int, error) {
+			match := regex.FindSubmatch(body)
+			return strconv.Atoi(string(match[1]))
+		})
 }
 
 func asyncFibV2(n int) future.Future[int] {
@@ -80,10 +104,14 @@ func main() {
 
 	exit := make(chan bool)
 
-	future.Map(asyncFibV1(n), func(fib int) string {
-		// conversion to string
-		return strconv.Itoa(fib)
-	}).Then(func(fib string) {
+	future.Map(
+		future.Race( // race for the first future that completes
+			asyncFibV1(n),
+			googFib(n),
+		), func(fib int) string {
+			// conversion to string
+			return strconv.Itoa(fib)
+		}).Then(func(fib string) {
 		// handle result of computation
 		fmt.Println(fib)
 		exit <- true

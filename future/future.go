@@ -55,6 +55,9 @@ type Future[T any] interface {
 	// The channel is written exactly once the future completes.
 	// It is closed afterwards.
 	Chan() <-chan try.Try[T]
+
+	// Await the future. This blocks.
+	Await(ctx context.Context) (T, error)
 }
 
 // Resolve a known value.

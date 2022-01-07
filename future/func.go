@@ -11,6 +11,12 @@ func Map[T, U any](f Future[T], m func(T) U) Future[U] {
 	return p.Future()
 }
 
+func MapErr[T, U any](f Future[T], m func(T) (U, error)) Future[U] {
+	p := Create[U]()
+	f.OnComplete(func(value try.Try[T]) { p.MustComplete(try.MapErr(value, m)) })
+	return p.Future()
+}
+
 func FlatMap[T, U any](f Future[T], m func(value T) Future[U]) Future[U] {
 	p := Create[U]()
 	f.OnComplete(func(value try.Try[T]) {
@@ -51,5 +57,16 @@ func Join[T, U any](x Future[T], y Future[U]) Future[pair.Pair[T, U]] {
 		}
 	})
 
+	return p.Future()
+}
+
+// Race for the first future that completes.
+func Race[T any](fs ...Future[T]) Future[T] {
+	p := Create[T]()
+	for _, f := range fs {
+		f.OnComplete(func(value try.Try[T]) {
+			p.TryComplete(value)
+		})
+	}
 	return p.Future()
 }
