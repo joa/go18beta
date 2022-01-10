@@ -50,6 +50,12 @@ func Func[T any](f func() (T, error)) (res Try[T]) {
 	}
 }
 
+// Call f and return its result.
+//
+// This is a shorthand for Func(f).Get() and will ensure that
+// any panic is converted to an error.
+func Call[T any](f func() (T, error)) (T, error) { return Func(f).Get() }
+
 func panicToFailure[T any](res *Try[T]) {
 	if r := recover(); r != nil {
 		switch r := r.(type) {
